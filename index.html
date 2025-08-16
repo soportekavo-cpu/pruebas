@@ -1,101 +1,250 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Minimalista</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Chat Soporte</title>
   <style>
-    body {
+    /* ===== Tema (oscuro por defecto) ===== */
+    :root{
+      --bg:#0b0b0c; --surface:#111214; --ink:#e5e7eb; --muted:#a1a1aa; --accent:#1d4ed8;
+      --bot:#1a1b1e; --user:#2563eb; --border:#232428;
+    }
+    @media (prefers-color-scheme: light) {
+      :root{
+        --bg:#f7f7fb; --surface:#ffffff; --ink:#111827; --muted:#6b7280; --accent:#2563eb;
+        --bot:#f3f4f6; --user:#2563eb; --border:#e5e7eb;
+      }
+    }
+    .light{
+      --bg:#f7f7fb; --surface:#ffffff; --ink:#111827; --muted:#6b7280; --accent:#2563eb;
+      --bot:#f3f4f6; --user:#2563eb; --border:#e5e7eb;
+    }
+    .dark{
+      --bg:#0b0b0c; --surface:#111214; --ink:#e5e7eb; --muted:#a1a1aa; --accent:#1d4ed8;
+      --bot:#1a1b1e; --user:#2563eb; --border:#232428;
+    }
+
+    /* ===== Layout base ===== */
+    html, body { height: 100%; }
+    body{
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #111; /* Fondo negro */
-      color: #fff;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    .app{
+      /* 100dvh maneja mejor el teclado en móviles modernos */
+      height: 100dvh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      max-width: 800px;
+      margin: 0 auto;
     }
-    header {
-      padding: 15px;
-      text-align: center;
-      background-color: #222;
-      font-size: 20px;
-      font-weight: bold;
+    .head{
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
     }
-    #chat {
+    .title{ font-weight: 700; }
+    .muted{ color: var(--muted); font-size: 12px; }
+    .toggle{
+      border:1px solid var(--border); background: transparent; color: var(--ink);
+      border-radius: 999px; padding: 6px 12px; font-weight:600; cursor:pointer;
+    }
+
+    .chat{
       flex: 1;
-      padding: 10px;
       overflow-y: auto;
+      padding: 12px 12px 8px 12px;
+      scroll-behavior: smooth;
+      background: var(--bg);
     }
-    .message {
-      margin: 5px 0;
-      padding: 10px;
-      border-radius: 8px;
-      max-width: 70%;
+    .row{ display:flex; margin: 6px 0; }
+    .me{ justify-content: flex-end; }
+    .bubble{
+      max-width: 82%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 16px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      border: 1px solid var(--border);
     }
-    .user {
-      background-color: #0078ff;
-      align-self: flex-end;
-      text-align: right;
-      margin-left: auto;
+    .bubble.bot{
+      background: var(--bot); color: var(--ink);
+      border-bottom-left-radius: 6px;
     }
-    .bot {
-      background-color: #444;
-      align-self: flex-start;
+    .bubble.me{
+      background: var(--user); color: #fff;
+      border-bottom-right-radius: 6px;
     }
-    footer {
-      display: flex;
-      padding: 10px;
-      background-color: #222;
+
+    .chips{
+      display:flex; flex-wrap: wrap; gap:8px; margin: 6px 4px 0 4px;
     }
-    input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
+    .chip{
+      border:1px solid var(--border); color: var(--ink);
+      background: transparent; border-radius: 999px;
+      padding: 8px 12px; font-size: 14px; cursor: pointer;
+    }
+
+    .foot{
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; /* respeta la “barrita” del iPhone */
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      position: sticky; bottom: 0; z-index: 10;
+    }
+    .in{
+      width: 100%;
+      font-size: 18px;                 /* ← más grande */
+      padding: 14px 16px;              /* ← más alto */
+      border-radius: 12px;
+      border: 1px solid var(--border);
       outline: none;
+      color: var(--ink);
+      background: transparent;
     }
-    button {
-      margin-left: 10px;
-      padding: 10px 15px;
+    .btn{
+      font-size: 17px;                 /* ← más grande */
+      font-weight: 700;
+      padding: 14px 18px;              /* ← más alto/ancho */
+      border-radius: 12px;
       border: none;
-      border-radius: 5px;
-      background-color: #0078ff;
-      color: white;
+      background: var(--accent);
+      color: #fff;
       cursor: pointer;
     }
+    .btn:active{ transform: translateY(1px); }
   </style>
 </head>
 <body>
-  <header>Chat Soporte</header>
-  <div id="chat"></div>
-  <footer>
-    <input type="text" id="input" placeholder="Escribe tu mensaje...">
-    <button onclick="sendMessage()">Enviar</button>
-  </footer>
+  <div class="app">
+    <div class="head">
+      <div>
+        <div class="title">Chat del Salón</div>
+        <div class="muted">Agenda, reprograma y resuelve dudas</div>
+      </div>
+      <button id="toggle" class="toggle">☾ / ☀︎</button>
+    </div>
+
+    <div id="chat" class="chat"></div>
+
+    <div class="foot">
+      <input id="input" class="in" placeholder="Escribe tu mensaje…" inputmode="latin" autocomplete="off" />
+      <button id="send" class="btn">Enviar</button>
+    </div>
+  </div>
 
   <script>
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("input");
+    // ========= Tema claro/oscuro =========
+    const saved = localStorage.getItem('theme');
+    if(saved){ document.body.classList.add(saved); }
+    else {
+      // respeta el modo del sistema al primer load
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.body.classList.add(prefersDark ? 'dark' : 'light');
+    }
+    document.getElementById('toggle').onclick = ()=>{
+      const isLight = document.body.classList.contains('light');
+      document.body.classList.remove(isLight ? 'light' : 'dark');
+      document.body.classList.add(isLight ? 'dark' : 'light');
+      localStorage.setItem('theme', isLight ? 'dark' : 'light');
+    };
 
-    function addMessage(text, sender) {
-      const msg = document.createElement("div");
-      msg.classList.add("message", sender);
-      msg.textContent = text;
-      chat.appendChild(msg);
+    // ========= Chat helpers =========
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+
+    function scrollToBottom(){
       chat.scrollTop = chat.scrollHeight;
     }
-
-    function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
-      addMessage(text, "user");
-      input.value = "";
-
-      // Respuesta simulada (luego lo conectamos a n8n/Postgres/IA)
-      setTimeout(() => {
-        addMessage("Respuesta automática: " + text, "bot");
-      }, 500);
+    function addMsg(text, who='bot'){
+      const row = document.createElement('div');
+      row.className = 'row ' + (who==='me' ? 'me' : '');
+      const b = document.createElement('div');
+      b.className = 'bubble ' + (who==='me' ? 'me' : 'bot');
+      b.textContent = text;
+      row.appendChild(b);
+      chat.appendChild(row);
+      scrollToBottom();
     }
+    function addChips(options){
+      if(!options?.length) return;
+      const ct = document.createElement('div');
+      ct.className = 'chips';
+      options.forEach(op=>{
+        const c = document.createElement('button');
+        c.className = 'chip';
+        c.textContent = op;
+        c.onclick = ()=>{ input.value = op; send(); };
+        ct.appendChild(c);
+      });
+      chat.appendChild(ct);
+      scrollToBottom();
+    }
+
+    // Mantén el input visible cuando aparece el teclado (iOS/Android)
+    const vv = window.visualViewport;
+    if(vv){
+      const onResize = ()=>{
+        // reservar espacio para el teclado bajando el scroll
+        setTimeout(scrollToBottom, 50);
+      };
+      vv.addEventListener('resize', onResize);
+      vv.addEventListener('scroll', onResize);
+    }
+    input.addEventListener('focus', ()=> setTimeout(scrollToBottom, 50));
+
+    // ========= Backend (simulado por ahora) =========
+    // Cuando conectes n8n, cambia USE_N8N=true y pon tu URL en API_URL.
+    const USE_N8N = false;
+    const API_URL = "https://TU_N8N_HTTPS/webhook/chat-salon"; // reemplaza cuando esté listo
+
+    async function send(){
+      const text = input.value.trim();
+      if(!text) return;
+      addMsg(text, 'me');
+      input.value = ''; input.focus();
+
+      if(USE_N8N){
+        try{
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ sessionId: getSession(), message: text })
+          });
+          const data = await res.json(); // {reply, options?}
+          if(data.reply) addMsg(data.reply, 'bot');
+          if(data.options) addChips(data.options);
+        }catch(e){
+          addMsg('Perdón, hubo un problema. Intenta de nuevo.', 'bot');
+        }
+      } else {
+        // Eco de prueba
+        setTimeout(()=> addMsg('Respuesta automática: ' + text, 'bot'), 300);
+      }
+    }
+
+    function getSession(){
+      let s = localStorage.getItem('salon_session');
+      if(!s){ s = 'sess_' + Math.random().toString(36).slice(2); localStorage.setItem('salon_session', s); }
+      return s;
+    }
+
+    // Enviar con botón y con Enter
+    sendBtn.onclick = send;
+    input.addEventListener('keydown', e=>{ if(e.key === 'Enter') send(); });
+
+    // Mensaje inicial
+    addMsg('¡Hola! Soy tu asistente. ¿Reservar, ver servicios o reprogramar?', 'bot');
+    addChips(['Reservar manicure','Ver servicios','Reprogramar mi cita']);
   </script>
 </body>
 </html>
