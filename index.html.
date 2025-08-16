@@ -1,53 +1,101 @@
--- clientes básicos
-CREATE TABLE customers (
-  id SERIAL PRIMARY KEY,
-  phone TEXT UNIQUE,
-  email TEXT UNIQUE,
-  name TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Minimalista</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111; /* Fondo negro */
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      padding: 15px;
+      text-align: center;
+      background-color: #222;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    #chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    .message {
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 70%;
+    }
+    .user {
+      background-color: #0078ff;
+      align-self: flex-end;
+      text-align: right;
+      margin-left: auto;
+    }
+    .bot {
+      background-color: #444;
+      align-self: flex-start;
+    }
+    footer {
+      display: flex;
+      padding: 10px;
+      background-color: #222;
+    }
+    input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+    }
+    button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      background-color: #0078ff;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>Chat Soporte</header>
+  <div id="chat"></div>
+  <footer>
+    <input type="text" id="input" placeholder="Escribe tu mensaje...">
+    <button onclick="sendMessage()">Enviar</button>
+  </footer>
 
--- sesiones del chat (para continuidad multimensaje)
-CREATE TABLE sessions (
-  id TEXT PRIMARY KEY,         -- sessionId del front (sess_xxx)
-  customer_id INT REFERENCES customers(id),
-  last_seen TIMESTAMPTZ DEFAULT now(),
-  meta JSONB DEFAULT '{}'
-);
+  <script>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
 
--- mensajes (historial)
-CREATE TABLE messages (
-  id BIGSERIAL PRIMARY KEY,
-  session_id TEXT REFERENCES sessions(id),
-  role TEXT CHECK (role IN ('user','assistant')),
-  content TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.classList.add("message", sender);
+      msg.textContent = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
--- citas/reservas
-CREATE TABLE bookings (
-  id TEXT PRIMARY KEY,         -- bookingId (BK_xxx)
-  customer_id INT REFERENCES customers(id),
-  service TEXT,
-  start_at TIMESTAMPTZ,
-  end_at TIMESTAMPTZ,
-  status TEXT CHECK (status IN ('confirmed','canceled','rescheduled')) DEFAULT 'confirmed',
-  calendar_event_id TEXT,      -- eventId de Google Calendar
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, "user");
+      input.value = "";
 
--- tokens link mágico y OTP
-CREATE TABLE auth_tokens (
-  id BIGSERIAL PRIMARY KEY,
-  booking_id TEXT REFERENCES bookings(id),
-  token_hash TEXT,             -- guarda hash del token, no plano
-  otp_hash TEXT,               -- guarda hash del OTP, no plano
-  expires_at TIMESTAMPTZ,
-  used_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- índices útiles
-CREATE INDEX ON messages (session_id, created_at);
-CREATE INDEX ON bookings (customer_id, start_at);
-CREATE INDEX ON auth_tokens (booking_id, expires_at);
+      // Respuesta simulada (luego lo conectamos a n8n/Postgres/IA)
+      setTimeout(() => {
+        addMessage("Respuesta automática: " + text, "bot");
+      }, 500);
+    }
+  </script>
+</body>
+</html>
