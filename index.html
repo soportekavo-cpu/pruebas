@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Minimalista</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111; /* Fondo negro */
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      padding: 15px;
+      text-align: center;
+      background-color: #222;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    #chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    .message {
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 70%;
+    }
+    .user {
+      background-color: #0078ff;
+      align-self: flex-end;
+      text-align: right;
+      margin-left: auto;
+    }
+    .bot {
+      background-color: #444;
+      align-self: flex-start;
+    }
+    footer {
+      display: flex;
+      padding: 10px;
+      background-color: #222;
+    }
+    input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+    }
+    button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      background-color: #0078ff;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>Chat Soporte</header>
+  <div id="chat"></div>
+  <footer>
+    <input type="text" id="input" placeholder="Escribe tu mensaje...">
+    <button onclick="sendMessage()">Enviar</button>
+  </footer>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.classList.add("message", sender);
+      msg.textContent = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, "user");
+      input.value = "";
+
+      // Respuesta simulada (luego lo conectamos a n8n/Postgres/IA)
+      setTimeout(() => {
+        addMessage("Respuesta automática: " + text, "bot");
+      }, 500);
+    }
+  </script>
+</body>
+</html>
