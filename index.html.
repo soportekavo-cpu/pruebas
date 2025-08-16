@@ -1,0 +1,53 @@
+-- clientes básicos
+CREATE TABLE customers (
+  id SERIAL PRIMARY KEY,
+  phone TEXT UNIQUE,
+  email TEXT UNIQUE,
+  name TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- sesiones del chat (para continuidad multimensaje)
+CREATE TABLE sessions (
+  id TEXT PRIMARY KEY,         -- sessionId del front (sess_xxx)
+  customer_id INT REFERENCES customers(id),
+  last_seen TIMESTAMPTZ DEFAULT now(),
+  meta JSONB DEFAULT '{}'
+);
+
+-- mensajes (historial)
+CREATE TABLE messages (
+  id BIGSERIAL PRIMARY KEY,
+  session_id TEXT REFERENCES sessions(id),
+  role TEXT CHECK (role IN ('user','assistant')),
+  content TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- citas/reservas
+CREATE TABLE bookings (
+  id TEXT PRIMARY KEY,         -- bookingId (BK_xxx)
+  customer_id INT REFERENCES customers(id),
+  service TEXT,
+  start_at TIMESTAMPTZ,
+  end_at TIMESTAMPTZ,
+  status TEXT CHECK (status IN ('confirmed','canceled','rescheduled')) DEFAULT 'confirmed',
+  calendar_event_id TEXT,      -- eventId de Google Calendar
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- tokens link mágico y OTP
+CREATE TABLE auth_tokens (
+  id BIGSERIAL PRIMARY KEY,
+  booking_id TEXT REFERENCES bookings(id),
+  token_hash TEXT,             -- guarda hash del token, no plano
+  otp_hash TEXT,               -- guarda hash del OTP, no plano
+  expires_at TIMESTAMPTZ,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- índices útiles
+CREATE INDEX ON messages (session_id, created_at);
+CREATE INDEX ON bookings (customer_id, start_at);
+CREATE INDEX ON auth_tokens (booking_id, expires_at);
