@@ -3,74 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Minimalista</title>
+  <title>Chat Soporte</title>
   <style>
+    /* --- Estilos base (tema oscuro minimal) --- */
+    :root{
+      --bg:#111;         /* fondo */
+      --panel:#222;      /* encabezado / footer */
+      --ink:#fff;        /* texto principal */
+      --muted:#c7c7c7;   /* texto suave */
+      --bot:#444;        /* burbuja bot */
+      --user:#0078ff;    /* burbuja usuario */
+    }
+
+    html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #111; /* Fondo negro */
-      color: #fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--ink);
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      min-height: 100vh;
     }
+
     header {
-      padding: 15px;
+      padding: 16px;
       text-align: center;
-      background-color: #222;
+      background-color: var(--panel);
       font-size: 20px;
-      font-weight: bold;
+      font-weight: 700;
+      letter-spacing: .2px;
     }
+
     #chat {
       flex: 1;
-      padding: 10px;
+      padding: 14px;
       overflow-y: auto;
     }
+
     .message {
-      margin: 5px 0;
-      padding: 10px;
-      border-radius: 8px;
-      max-width: 70%;
+      margin: 8px 0;
+      padding: 12px 14px;
+      border-radius: 10px;
+      max-width: 78%;
+      line-height: 1.35;
+      font-size: 16px;      /* ↑ un poco más grande */
+      word-wrap: break-word;
     }
+
     .user {
-      background-color: #0078ff;
+      background-color: var(--user);
       align-self: flex-end;
       text-align: right;
       margin-left: auto;
+      color: #fff;
     }
+
     .bot {
-      background-color: #444;
+      background-color: var(--bot);
       align-self: flex-start;
+      color: #fff;
     }
+
     footer {
       display: flex;
-      padding: 10px;
-      background-color: #222;
+      gap: 10px;
+      padding: 12px;
+      background-color: var(--panel);
+      position: sticky;
+      bottom: 0;
     }
-    input {
+
+    /*  ⬇️ AUMENTOS de tamaño que pediste  */
+    input#input {
       flex: 1;
-      padding: 10px;
+      padding: 14px 16px;    /* ↑ más alto y cómodo */
+      font-size: 18px;       /* ↑ texto más grande */
       border: none;
-      border-radius: 5px;
+      border-radius: 10px;
       outline: none;
+      color: #111;
     }
-    button {
-      margin-left: 10px;
-      padding: 10px 15px;
+
+    button#send-btn {
+      padding: 14px 22px;    /* ↑ botón más grande */
+      font-size: 17px;       /* ↑ texto del botón */
       border: none;
-      border-radius: 5px;
-      background-color: #0078ff;
-      color: white;
+      border-radius: 10px;
+      background-color: var(--user);
+      color: #fff;
+      font-weight: 700;
       cursor: pointer;
     }
+
+    button#send-btn:hover { filter: brightness(0.95); }
+    button#send-btn:active { transform: translateY(1px); }
   </style>
 </head>
 <body>
   <header>Chat Soporte</header>
+
   <div id="chat"></div>
+
   <footer>
-    <input type="text" id="input" placeholder="Escribe tu mensaje...">
-    <button onclick="sendMessage()">Enviar</button>
+    <input type="text" id="input" placeholder="Escribe tu mensaje…">
+    <button id="send-btn" onclick="sendMessage()">Enviar</button>
   </footer>
 
   <script>
@@ -90,12 +127,18 @@
       if (!text) return;
       addMessage(text, "user");
       input.value = "";
+      input.focus();
 
-      // Respuesta simulada (luego lo conectamos a n8n/Postgres/IA)
+      // Respuesta simulada por ahora (luego la conectamos a n8n)
       setTimeout(() => {
         addMessage("Respuesta automática: " + text, "bot");
-      }, 500);
+      }, 400);
     }
+
+    // Enviar con Enter
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
   </script>
 </body>
 </html>
