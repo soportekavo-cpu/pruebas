@@ -5,13 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Chat Soporte</title>
   <style>
+    /* ===== Tema (oscuro por defecto) ===== */
     :root{
       --bg:#0b0b0c; --surface:#111214; --ink:#e5e7eb; --muted:#a1a1aa; --accent:#1d4ed8;
       --bot:#1a1b1e; --user:#2563eb; --border:#232428;
-      --foot-h:72px;   /* se mide en JS */
-      --kb:0px;        /* altura teclado en JS */
     }
-    @media (prefers-color-scheme: light){
+    @media (prefers-color-scheme: light) {
       :root{
         --bg:#f7f7fb; --surface:#ffffff; --ink:#111827; --muted:#6b7280; --accent:#2563eb;
         --bot:#f3f4f6; --user:#2563eb; --border:#e5e7eb;
@@ -26,160 +25,154 @@
       --bot:#1a1b1e; --user:#2563eb; --border:#232428;
     }
 
-    html,body{height:100%}
+    /* ===== Layout base (igual al tuyo) ===== */
+    html, body { height: 100%; }
     body{
-      margin:0; background:var(--bg); color:var(--ink);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       overscroll-behavior-y: contain;
-      touch-action: manipulation;
     }
-
-    /* contenedor de toda la app */
     .app{
-      position: fixed; inset: 0;
-      display:flex; flex-direction:column;
-      max-width:800px; margin:0 auto;
-      padding-top:58px;                                  /* header fijo */
-      padding-bottom: calc(var(--foot-h) + var(--kb));   /* reserva footer + teclado */
-      box-sizing:border-box;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      max-width: 800px;
+      margin: 0 auto;
     }
-
-    /* header fijo */
     .head{
-      position: fixed; left:50%; transform:translateX(-50%);
-      top:0; width:min(100%,800px);
-      display:flex; justify-content:space-between; align-items:center;
-      padding:14px 16px; background:var(--surface);
-      border-bottom:1px solid var(--border); z-index:20; box-sizing:border-box;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
     }
-    .title{font-weight:700}
-    .muted{color:var(--muted); font-size:12px}
+    .title{ font-weight: 700; }
+    .muted{ color: var(--muted); font-size: 12px; }
     .toggle{
-      border:1px solid var(--border); background:transparent; color:var(--ink);
-      border-radius:999px; padding:6px 12px; font-weight:600; cursor:pointer;
+      border:1px solid var(--border); background: transparent; color: var(--ink);
+      border-radius: 999px; padding: 6px 12px; font-weight:600; cursor:pointer;
     }
 
-    /* ===== chat: con spacer para pegar mensajes abajo ===== */
     .chat{
-      flex:1; overflow-y:auto;
-      -webkit-overflow-scrolling: touch; scroll-behavior:auto;
-      background:var(--bg);
-      border-left:1px solid var(--border); border-right:1px solid var(--border);
-      padding:12px;
-      display:flex; flex-direction:column;
-      gap:0; /* el gap va dentro de #messages */
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 12px 8px 12px;
+      /* scroll más suave en iOS y Android */
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: auto;
+      background: var(--bg);
     }
-    .spacer{ flex:1 1 auto; }
-    #messages{
-      display:flex; flex-direction:column; gap:6px;
-    }
-
-    .row{ display:flex; }
-    .me{ justify-content:flex-end; }
+    .row{ display:flex; margin: 6px 0; }
+    .me{ justify-content: flex-end; }
     .bubble{
-      max-width:82%; padding:12px 14px; border-radius:16px;
-      font-size:16px; line-height:1.4; word-wrap:break-word;
-      border:1px solid var(--border);
+      max-width: 82%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 16px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      border: 1px solid var(--border);
     }
-    .bubble.bot{ background:var(--bot); color:var(--ink); border-bottom-left-radius:6px; }
-    .bubble.me{ background:var(--user); color:#fff; border-bottom-right-radius:6px; }
+    .bubble.bot{
+      background: var(--bot); color: var(--ink);
+      border-bottom-left-radius: 6px;
+    }
+    .bubble.me{
+      background: var(--user); color: #fff;
+      border-bottom-right-radius: 6px;
+    }
 
-    .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+    .chips{
+      display:flex; flex-wrap: wrap; gap:8px; margin: 6px 4px 0 4px;
+    }
     .chip{
-      border:1px solid var(--border); color:var(--ink);
-      background:transparent; border-radius:999px;
-      padding:8px 12px; font-size:14px; cursor:pointer;
+      border:1px solid var(--border); color: var(--ink);
+      background: transparent; border-radius: 999px;
+      padding: 8px 12px; font-size: 14px; cursor: pointer;
     }
 
-    /* footer fijo que se eleva con el teclado */
     .foot{
-      position: fixed; left:50%; transform:translateX(-50%);
-      bottom:0; width:min(100%,800px);
-      background:var(--surface); border-top:1px solid var(--border);
-      padding:10px 10px max(10px, env(safe-area-inset-bottom));
-      display:grid; grid-template-columns:1fr auto; gap:8px;
-      z-index:30; box-sizing:border-box;
-      translate: 0 calc(-1 * var(--kb));  /* subir cuando hay teclado */
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      position: sticky; bottom: 0; z-index: 10;
     }
     .in{
-      width:100%; font-size:18px; padding:14px 16px;
-      border-radius:12px; border:1px solid var(--border);
-      outline:none; color:var(--ink); background:transparent;
+      width: 100%;
+      font-size: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      outline: none;
+      color: var(--ink);
+      background: transparent;
     }
     .btn{
-      font-size:17px; font-weight:700; padding:14px 18px;
-      border-radius:12px; border:none; background:var(--accent); color:#fff; cursor:pointer;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
     }
-    .btn:active{ transform:translateY(1px); }
+    .btn:active{ transform: translateY(1px); }
+
+    /* ancla invisible para autoscroll al final */
+    #end-anchor{height:1px}
   </style>
 </head>
 <body>
-  <div class="head">
-    <div>
-      <div class="title">Chat del Salón</div>
-      <div class="muted">Agenda, reprograma y resuelve dudas</div>
-    </div>
-    <button id="toggle" class="toggle">☾ / ☀︎</button>
-  </div>
-
   <div class="app">
-    <div id="chat" class="chat">
-      <div class="spacer" id="spacer"></div>
-      <div id="messages"></div>
+    <div class="head">
+      <div>
+        <div class="title">Chat del Salón</div>
+        <div class="muted">Agenda, reprograma y resuelve dudas</div>
+      </div>
+      <button id="toggle" class="toggle">☾ / ☀︎</button>
     </div>
-  </div>
 
-  <div class="foot" id="foot">
-    <input id="input" class="in" placeholder="Escribe tu mensaje…" autocomplete="off" />
-    <button id="send" class="btn">Enviar</button>
+    <!-- solo añadimos el ancla al final del chat -->
+    <div id="chat" class="chat">
+      <div id="end-anchor"></div>
+    </div>
+
+    <div class="foot">
+      <input id="input" class="in" placeholder="Escribe tu mensaje…" inputmode="latin" autocomplete="off" />
+      <button id="send" class="btn">Enviar</button>
+    </div>
   </div>
 
   <script>
-    // ===== tema claro/oscuro
+    // ========= Tema claro/oscuro (igual que el tuyo) =========
     const saved = localStorage.getItem('theme');
     if(saved){ document.body.classList.add(saved); }
-    else document.body.classList.add(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    else {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.body.classList.add(prefersDark ? 'dark' : 'light');
+    }
     document.getElementById('toggle').onclick = ()=>{
-      const light = document.body.classList.contains('light');
-      document.body.classList.toggle('light', !light);
-      document.body.classList.toggle('dark', light);
-      localStorage.setItem('theme', light ? 'dark' : 'light');
+      const isLight = document.body.classList.contains('light');
+      document.body.classList.remove(isLight ? 'light' : 'dark');
+      document.body.classList.add(isLight ? 'dark' : 'light');
+      localStorage.setItem('theme', isLight ? 'dark' : 'light');
     };
 
-    // ===== medir footer y teclado
-    const foot = document.getElementById('foot');
+    // ========= Chat helpers (CAMBIO mínimo: ancla) =========
     const chat = document.getElementById('chat');
-    const messages = document.getElementById('messages');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('send');
+    const endAnchor = document.getElementById('end-anchor');
 
-    function setFootHeight(){
-      const h = Math.ceil(foot.getBoundingClientRect().height);
-      document.documentElement.style.setProperty('--foot-h', h + 'px');
-    }
-    setFootHeight();
-    new ResizeObserver(setFootHeight).observe(foot);
-
-    const vv = window.visualViewport;
-    function setKb(){
-      if(!vv){ document.documentElement.style.setProperty('--kb','0px'); return; }
-      const kb = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
-      document.documentElement.style.setProperty('--kb', kb + 'px');
-      scrollToBottom();
-    }
-    if(vv){
-      vv.addEventListener('resize', setKb);
-      vv.addEventListener('scroll', setKb);
-    }
-    window.addEventListener('orientationchange', ()=> setTimeout(setKb, 60));
-    input.addEventListener('focus', ()=> setTimeout(setKb, 60));
-
-    // ===== utilidades de chat
-    function scrollToBottom(){
-      // como los mensajes están debajo del spacer, basta con ir al final real
-      requestAnimationFrame(()=>{
-        chat.scrollTop = chat.scrollHeight;
-      });
+    function toBottom(){
+      // desplaza al ancla (último elemento) – funciona estable en iOS/Android
+      endAnchor.scrollIntoView({block:'end'});
     }
 
     function addMsg(text, who='bot'){
@@ -189,12 +182,13 @@
       b.className = 'bubble ' + (who==='me' ? 'me' : 'bot');
       b.textContent = text;
       row.appendChild(b);
-      messages.appendChild(row);   // SIEMPRE al final (debajo del spacer)
-      scrollToBottom();
+      // inserta SIEMPRE antes del ancla (así el ancla queda al final)
+      chat.insertBefore(row, endAnchor);
+      toBottom();
     }
 
     function addChips(options){
-      if(!Array.isArray(options) || !options.length) return;
+      if(!options?.length) return;
       const ct = document.createElement('div');
       ct.className = 'chips';
       options.forEach(op=>{
@@ -204,11 +198,14 @@
         c.onclick = ()=>{ input.value = op; send(); };
         ct.appendChild(c);
       });
-      messages.appendChild(ct);
-      scrollToBottom();
+      chat.insertBefore(ct, endAnchor);
+      toBottom();
     }
 
-    // ===== backend simulado (luego conectamos n8n)
+    // mantener el final visible cuando aparece teclado (suave y simple)
+    input.addEventListener('focus', ()=> setTimeout(toBottom, 50));
+
+    // ========= Backend (simulado por ahora) =========
     const USE_N8N = false;
     const API_URL = "https://TU_N8N_HTTPS/webhook/chat-salon";
 
@@ -237,19 +234,19 @@
           addMsg('Perdón, hubo un problema. Intenta de nuevo.', 'bot');
         }
       } else {
-        setTimeout(()=> addMsg('Respuesta automática: ' + text, 'bot'), 220);
+        setTimeout(()=> addMsg('Respuesta automática: ' + text, 'bot'), 300);
       }
     }
 
     sendBtn.onclick = send;
-    input.addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
+    input.addEventListener('keydown', e=>{ if(e.key === 'Enter') send(); });
 
-    // bienvenida
-    addMsg('¡Hola! Soy tu asistente pendejo. ¿Reservar, ver servicios o reprogramar?', 'bot');
+    // Mensaje inicial
+    addMsg('¡Hola! Soy tu asistente pendejo 2. ¿Reservar, ver servicios o reprogramar?', 'bot');
     addChips(['Reservar manicure','Ver servicios','Reprogramar mi cita']);
 
-    // inicializa medidas
-    setTimeout(()=>{ setFootHeight(); setKb(); scrollToBottom(); }, 80);
+    // baja al final en el primer render
+    setTimeout(toBottom, 80);
   </script>
 </body>
 </html>
