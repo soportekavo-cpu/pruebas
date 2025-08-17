@@ -32,16 +32,14 @@
       background: var(--bg);
       color: var(--ink);
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      overscroll-behavior-y: contain;
     }
     .app{
-      height: 100svh;                 /* alto real en móviles (fallback: los navegadores usan 100vh) */
+      /* 100dvh maneja mejor el teclado en móviles modernos */
+      height: 100dvh;
       display: flex;
       flex-direction: column;
       max-width: 800px;
       margin: 0 auto;
-      box-sizing: border-box;
-      padding-bottom: calc(var(--foot-h,72px) + env(safe-area-inset-bottom)); /* reserva espacio del footer fixed */
     }
     .head{
       display: flex; justify-content: space-between; align-items: center;
@@ -61,9 +59,7 @@
       flex: 1;
       overflow-y: auto;
       padding: 12px 12px 8px 12px;
-      /* mejor tacto en iOS, y nosotros manejamos el “autoscroll” por JS */
-      -webkit-overflow-scrolling: touch;
-      scroll-behavior: auto;
+      scroll-behavior: smooth;
       background: var(--bg);
     }
     .row{ display:flex; margin: 6px 0; }
@@ -95,26 +91,19 @@
       padding: 8px 12px; font-size: 14px; cursor: pointer;
     }
 
-    /* Footer FIXED (para que nunca quede detrás del teclado) */
     .foot{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 0;
-      width: min(100%, 800px);
       background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px;
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; /* respeta la “barrita” del iPhone */
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 8px;
-      z-index: 20;
-      box-sizing: border-box;
+      position: sticky; bottom: 0; z-index: 10;
     }
     .in{
       width: 100%;
-      font-size: 18px;                 /* tu tamaño original */
-      padding: 14px 16px;
+      font-size: 18px;                 /* ← más grande */
+      padding: 14px 16px;              /* ← más alto */
       border-radius: 12px;
       border: 1px solid var(--border);
       outline: none;
@@ -122,9 +111,9 @@
       background: transparent;
     }
     .btn{
-      font-size: 17px;                 /* tu tamaño original */
+      font-size: 17px;                 /* ← más grande */
       font-weight: 700;
-      padding: 14px 18px;
+      padding: 14px 18px;              /* ← más alto/ancho */
       border-radius: 12px;
       border: none;
       background: var(--accent);
@@ -145,11 +134,11 @@
     </div>
 
     <div id="chat" class="chat"></div>
-  </div>
 
-  <div class="foot" id="foot">
-    <input id="input" class="in" placeholder="Escribe tu mensaje…" inputmode="latin" autocomplete="off" />
-    <button id="send" class="btn">Enviar</button>
+    <div class="foot">
+      <input id="input" class="in" placeholder="Escribe tu mensaje…" inputmode="latin" autocomplete="off" />
+      <button id="send" class="btn">Enviar</button>
+    </div>
   </div>
 
   <script>
@@ -157,6 +146,7 @@
     const saved = localStorage.getItem('theme');
     if(saved){ document.body.classList.add(saved); }
     else {
+      // respeta el modo del sistema al primer load
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.body.classList.add(prefersDark ? 'dark' : 'light');
     }
@@ -167,27 +157,13 @@
       localStorage.setItem('theme', isLight ? 'dark' : 'light');
     };
 
-    // ========= Medir footer y reservar espacio (evita huecos) =========
-    const foot = document.getElementById('foot');
-    const app  = document.querySelector('.app');
-    function setFootVar(){
-      const h = foot.getBoundingClientRect().height;
-      document.documentElement.style.setProperty('--foot-h', h + 'px');
-    }
-    setFootVar();
-    new ResizeObserver(setFootVar).observe(foot);
-
     // ========= Chat helpers =========
     const chat = document.getElementById('chat');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('send');
 
     function scrollToBottom(){
-      // doble RAF para que Safari/Android no “salte” arriba
-      requestAnimationFrame(()=> {
-        chat.scrollTop = chat.scrollHeight;
-        requestAnimationFrame(()=> chat.scrollTop = chat.scrollHeight);
-      });
+      chat.scrollTop = chat.scrollHeight;
     }
     function addMsg(text, who='bot'){
       const row = document.createElement('div');
@@ -196,7 +172,7 @@
       b.className = 'bubble ' + (who==='me' ? 'me' : 'bot');
       b.textContent = text;
       row.appendChild(b);
-      chat.appendChild(row);          // SIEMPRE al final
+      chat.appendChild(row);
       scrollToBottom();
     }
     function addChips(options){
@@ -214,20 +190,20 @@
       scrollToBottom();
     }
 
-    // Mantener visible con teclado (iOS/Android)
+    // Mantén el input visible cuando aparece el teclado (iOS/Android)
     const vv = window.visualViewport;
-    function onViewportChange(){
-      if(vv){ app.style.height = vv.height + 'px'; } // usa alto visible real
-      scrollToBottom();
-    }
     if(vv){
-      vv.addEventListener('resize', onViewportChange);
-      vv.addEventListener('scroll', onViewportChange);
+      const onResize = ()=>{
+        // reservar espacio para el teclado bajando el scroll
+        setTimeout(scrollToBottom, 50);
+      };
+      vv.addEventListener('resize', onResize);
+      vv.addEventListener('scroll', onResize);
     }
-    window.addEventListener('orientationchange', onViewportChange);
     input.addEventListener('focus', ()=> setTimeout(scrollToBottom, 50));
 
     // ========= Backend (simulado por ahora) =========
+    // Cuando conectes n8n, cambia USE_N8N=true y pon tu URL en API_URL.
     const USE_N8N = false;
     const API_URL = "https://TU_N8N_HTTPS/webhook/chat-salon"; // reemplaza cuando esté listo
 
@@ -251,7 +227,8 @@
           addMsg('Perdón, hubo un problema. Intenta de nuevo.', 'bot');
         }
       } else {
-        setTimeout(()=> addMsg('Respuesta automática: ' + text, 'bot'), 250);
+        // Eco de prueba
+        setTimeout(()=> addMsg('Respuesta automática: ' + text, 'bot'), 300);
       }
     }
 
@@ -266,7 +243,7 @@
     input.addEventListener('keydown', e=>{ if(e.key === 'Enter') send(); });
 
     // Mensaje inicial
-    addMsg('¡Hola! Soy tu asistente virtual. ¿Reservar, ver servicios o reprogramar?', 'bot');
+    addMsg('¡Hola! Soy tu asistente. ¿Reservar, ver servicios o reprogramar?', 'bot');
     addChips(['Reservar manicure','Ver servicios','Reprogramar mi cita']);
   </script>
 </body>
