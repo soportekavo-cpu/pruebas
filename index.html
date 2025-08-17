@@ -9,7 +9,7 @@
       --bg:#0b0b0c; --surface:#111214; --ink:#e5e7eb; --muted:#a1a1aa; --accent:#1d4ed8;
       --bot:#1a1b1e; --user:#2563eb; --border:#232428;
       --foot-h:72px;   /* se mide en JS */
-      --kb:0px;        /* altura teclado en JS */
+      --kb:0px;        /* altura del teclado (visualViewport) */
     }
     @media (prefers-color-scheme: light){
       :root{
@@ -30,21 +30,19 @@
     body{
       margin:0; background:var(--bg); color:var(--ink);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      overscroll-behavior-y: contain;
-      touch-action: manipulation;
+      overscroll-behavior-y: contain; touch-action: manipulation;
     }
 
-    /* contenedor de toda la app */
+    /* Contenedor de toda la app: reserva solo el footer (NO el teclado) */
     .app{
       position: fixed; inset: 0;
       display:flex; flex-direction:column;
       max-width:800px; margin:0 auto;
-      padding-top:58px;                                  /* header fijo */
-      padding-bottom: calc(var(--foot-h) + var(--kb));   /* reserva footer + teclado */
+      padding-top:58px;                       /* header fijo */
+      padding-bottom: var(--foot-h);          /* ← quitamos + --kb (FIX del hueco) */
       box-sizing:border-box;
     }
 
-    /* header fijo */
     .head{
       position: fixed; left:50%; transform:translateX(-50%);
       top:0; width:min(100%,800px);
@@ -59,20 +57,16 @@
       border-radius:999px; padding:6px 12px; font-weight:600; cursor:pointer;
     }
 
-    /* ===== chat: con spacer para pegar mensajes abajo ===== */
+    /* Chat con “spacer” que pega mensajes abajo */
     .chat{
       flex:1; overflow-y:auto;
       -webkit-overflow-scrolling: touch; scroll-behavior:auto;
       background:var(--bg);
       border-left:1px solid var(--border); border-right:1px solid var(--border);
-      padding:12px;
-      display:flex; flex-direction:column;
-      gap:0; /* el gap va dentro de #messages */
+      padding:12px; display:flex; flex-direction:column; gap:0;
     }
     .spacer{ flex:1 1 auto; }
-    #messages{
-      display:flex; flex-direction:column; gap:6px;
-    }
+    #messages{ display:flex; flex-direction:column; gap:6px; }
 
     .row{ display:flex; }
     .me{ justify-content:flex-end; }
@@ -91,15 +85,16 @@
       padding:8px 12px; font-size:14px; cursor:pointer;
     }
 
-    /* footer fijo que se eleva con el teclado */
+    /* Footer fijo: lo elevamos exactamente lo que mide el teclado */
     .foot{
       position: fixed; left:50%; transform:translateX(-50%);
-      bottom:0; width:min(100%,800px);
+      bottom: 0; width:min(100%,800px);
       background:var(--surface); border-top:1px solid var(--border);
       padding:10px 10px max(10px, env(safe-area-inset-bottom));
       display:grid; grid-template-columns:1fr auto; gap:8px;
       z-index:30; box-sizing:border-box;
-      translate: 0 calc(-1 * var(--kb));  /* subir cuando hay teclado */
+      /* mover verticalmente el footer cuando sale el teclado */
+      translate: 0 calc(-1 * var(--kb));
     }
     .in{
       width:100%; font-size:18px; padding:14px 16px;
@@ -124,7 +119,7 @@
 
   <div class="app">
     <div id="chat" class="chat">
-      <div class="spacer" id="spacer"></div>
+      <div class="spacer"></div>
       <div id="messages"></div>
     </div>
   </div>
@@ -135,18 +130,18 @@
   </div>
 
   <script>
-    // ===== tema claro/oscuro
+    // Tema claro/oscuro
     const saved = localStorage.getItem('theme');
     if(saved){ document.body.classList.add(saved); }
     else document.body.classList.add(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.getElementById('toggle').onclick = ()=>{
       const light = document.body.classList.contains('light');
       document.body.classList.toggle('light', !light);
-      document.body.classList.toggle('dark', light);
+      document.body.classList.toggle('dark',  light);
       localStorage.setItem('theme', light ? 'dark' : 'light');
     };
 
-    // ===== medir footer y teclado
+    // Medidas footer + teclado
     const foot = document.getElementById('foot');
     const chat = document.getElementById('chat');
     const messages = document.getElementById('messages');
@@ -174,14 +169,10 @@
     window.addEventListener('orientationchange', ()=> setTimeout(setKb, 60));
     input.addEventListener('focus', ()=> setTimeout(setKb, 60));
 
-    // ===== utilidades de chat
+    // Chat helpers
     function scrollToBottom(){
-      // como los mensajes están debajo del spacer, basta con ir al final real
-      requestAnimationFrame(()=>{
-        chat.scrollTop = chat.scrollHeight;
-      });
+      requestAnimationFrame(()=>{ chat.scrollTop = chat.scrollHeight; });
     }
-
     function addMsg(text, who='bot'){
       const row = document.createElement('div');
       row.className = 'row ' + (who==='me' ? 'me' : '');
@@ -189,10 +180,9 @@
       b.className = 'bubble ' + (who==='me' ? 'me' : 'bot');
       b.textContent = text;
       row.appendChild(b);
-      messages.appendChild(row);   // SIEMPRE al final (debajo del spacer)
+      messages.appendChild(row);   // abajo del todo (después del spacer)
       scrollToBottom();
     }
-
     function addChips(options){
       if(!Array.isArray(options) || !options.length) return;
       const ct = document.createElement('div');
@@ -208,16 +198,15 @@
       scrollToBottom();
     }
 
-    // ===== backend simulado (luego conectamos n8n)
+    // Backend simulado
     const USE_N8N = false;
     const API_URL = "https://TU_N8N_HTTPS/webhook/chat-salon";
 
     function getSession(){
       let s = localStorage.getItem('salon_session');
-      if(!s){ s = 'sess_' + Math.random().toString(36).slice(2); localStorage.setItem('salon_session', s); }
+      if(!s){ s='sess_'+Math.random().toString(36).slice(2); localStorage.setItem('salon_session', s); }
       return s;
     }
-
     async function send(){
       const text = input.value.trim();
       if(!text) return;
@@ -230,7 +219,7 @@
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ sessionId:getSession(), message:text })
           });
-          const data = await res.json(); // {reply, options?}
+          const data = await res.json();
           if(data.reply) addMsg(data.reply, 'bot');
           if(data.options) addChips(data.options);
         }catch(e){
@@ -240,15 +229,14 @@
         setTimeout(()=> addMsg('Respuesta automática: ' + text, 'bot'), 220);
       }
     }
-
     sendBtn.onclick = send;
     input.addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
 
-    // bienvenida
-    addMsg('¡Hola que tal! Soy tu asistente. ¿Reservar, ver servicios o reprogramar?', 'bot');
+    // Bienvenida
+    addMsg('¡Hola otra vez guey! Soy tu asistente. ¿Reservar, ver servicios o reprogramar?', 'bot');
     addChips(['Reservar manicure','Ver servicios','Reprogramar mi cita']);
 
-    // inicializa medidas
+    // Init
     setTimeout(()=>{ setFootHeight(); setKb(); scrollToBottom(); }, 80);
   </script>
 </body>
